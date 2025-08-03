@@ -5,7 +5,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { LogIn, Menu } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -52,6 +53,18 @@ const Navbar = () => {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
+            <SignedOut>
+              <Link
+                href={"/sign-in"}
+                className="text-base font-semibold flex items-center gap-x-1"
+              >
+                Sign in
+                <LogIn size={15} />
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
           </div>
 
           {/* MOBILE NAV */}
@@ -76,8 +89,20 @@ const Navbar = () => {
                       {item.title}
                     </Link>
                   ))}
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t flex items-center justify-between mr-4">
                     <ThemeToggle />
+                    <SignedOut>
+                      <Link
+                        href={"/sign-in"}
+                        className="text-base font-semibold flex items-center gap-x-1"
+                      >
+                        Sign in
+                        <LogIn size={15} />
+                      </Link>
+                    </SignedOut>
+                    <SignedIn>
+                      <UserButton />
+                    </SignedIn>
                   </div>
                 </div>
               </SheetContent>
