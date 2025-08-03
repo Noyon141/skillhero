@@ -34,7 +34,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <main>{children}</main>
+            <main className="w-full min-h-screen p-4">{children}</main>
           </ThemeProvider>
         </body>
       </html>
