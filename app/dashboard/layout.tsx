@@ -5,7 +5,7 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   return (
     <>
       <SidebarProvider>
-        <main>{children}</main>
+        <main className="h-screen">{children}</main>
       </SidebarProvider>
     </>
   );

@@ -24,7 +24,7 @@ const DashboardPage = () => {
     <>
       <SignOutRedirect />
       <SidebarProvider>
-        <Sidebar>
+        <Sidebar className="">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2">
               <Link href="/dashboard" className="flex items-center gap-2">
@@ -95,7 +95,7 @@ const DashboardPage = () => {
                   View and manage your personalized AI-generated career path.
                 </p>
                 <button className="text-primary hover:underline">
-                  View Roadmap →
+                  <Link href={"/dashboard/roadmap"}>View Roadmap →</Link>
                 </button>
               </div>
 
@@ -108,7 +108,7 @@ const DashboardPage = () => {
                   Track your progress through learning modules and courses.
                 </p>
                 <button className="text-primary hover:underline">
-                  View Progress →
+                  <Link href={"/dashboard/learning"}>View Progress →</Link>
                 </button>
               </div>
 
