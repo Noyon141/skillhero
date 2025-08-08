@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 4. **Project Ideas**: Suggested projects to apply skills.
 5. **Resources**: Recommended books, courses, and online materials.
 6. **Networking**: Tips for connecting with professionals in the field.
-Each phase should be detailed and actionable, with a focus on practical skills and real-world applications.`;
+Each phase should be detailed and actionable with proper Title, Description, key with a focus on practical skills and real-world applications.`;
 
   try {
     const response = await cohere.chat({
@@ -55,18 +55,18 @@ Each phase should be detailed and actionable, with a focus on practical skills a
       messages: [
         {
           role: "user",
-          content: prompt,
+          content: prompt,  
         },
       ],
       maxTokens: 800,
       temperature: 0.7,
     });
 
-    console.log("Got the Response From Cohere ");
+ 
 
     const roadmap = response.message.content;
-
-    console.log("Roadmap generated successfully:", roadmap);
+    
+    console.log("Got the Response From Cohere ");
     return NextResponse.json({ roadmap, success: true }, { status: 200 });
   } catch (error) {
     console.log("Error generating roadmap:", error);

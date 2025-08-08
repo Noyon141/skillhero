@@ -11,7 +11,7 @@ const urbanist = Urbanist({
 });
 
 export const metadata: Metadata = {
-  title: "SkillHero",
+  title: "Skill Hero",
   description:
     "Let users input their current skillset and desired goal, then generate an AI-powered career roadmap with timelines, learning modules, and resources.",
 };
