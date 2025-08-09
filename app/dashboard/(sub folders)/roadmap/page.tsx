@@ -120,6 +120,8 @@ export default function RoadmapPage() {
         setError("Could not parse roadmap into phases.");
         return;
       }
+      setLoading(false);
+
       setPhases(parsed);
     } catch (e) {
       console.log("ERROR generating roadmap:", e);
@@ -131,7 +133,7 @@ export default function RoadmapPage() {
 
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">SkillHero Roadmap Generator</h1>
+      <h1 className="text-3xl font-bold flex flex-col">Roadmap Generator</h1>
 
       <div className="space-y-4">
         <Input
@@ -159,20 +161,22 @@ export default function RoadmapPage() {
             <AccordionItem key={idx} value={`phase-${idx}`}>
               <AccordionTrigger>
                 <div className="flex flex-col text-left">
-                  <span className="text-base font-semibold">{phase.title}</span>
+                  <span className="text-lg md:text-xl font-semibold">
+                    {phase.title}
+                  </span>
                   {phase.description && (
-                    <span className="text-muted-foreground text-sm line-clamp-2">
+                    <span className="text-muted-foreground text-base md:text-lg line-clamp-2">
                       {phase.description}
                     </span>
                   )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="p-4 rounded-lg border bg-card space-y-4">
+                <div className="text-base font-semibold p-4 rounded-lg border bg-card space-y-4">
                   {phase.description && (
                     <div>
-                      <h3 className="font-medium mb-2">Description</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-medium mb-2 text-lg">Description</h3>
+                      <p className="text-base text-muted-foreground">
                         {phase.description}
                       </p>
                     </div>
@@ -180,8 +184,8 @@ export default function RoadmapPage() {
 
                   {!!phase.milestones?.length && (
                     <div>
-                      <h3 className="font-medium mb-2">Milestones</h3>
-                      <ul className="list-disc pl-6 text-sm space-y-1">
+                      <h3 className="font-medium mb-2 text-lg">Milestones</h3>
+                      <ul className="list-disc pl-6 text-base space-y-3">
                         {phase.milestones.map((m, i) => (
                           <li key={i}>{m}</li>
                         ))}
