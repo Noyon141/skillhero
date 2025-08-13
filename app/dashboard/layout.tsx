@@ -1,3 +1,4 @@
+import ScrollToTop from "@/components/ScrollToTop";
 import { SignOutRedirect } from "@/components/SignOutRedirect";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -75,7 +76,10 @@ export default function DashboardLayout({
               <span className="text-lg font-semibold">Dashboard</span>
             </div>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            {children}
+            <ScrollToTop />
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </>
