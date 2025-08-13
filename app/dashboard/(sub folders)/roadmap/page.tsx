@@ -1,96 +1,27 @@
 "use client";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { Roadmap } from "@/types/roadmap.types";
 import axios from "axios";
-import { useState } from "react";
-
-function normalizeCohereContent(raw: unknown): string {
-  if (!raw) return "";
-  if (typeof raw === "string") return raw;
-  if (Array.isArray(raw)) {
-    return (
-      raw
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((part: any) =>
-          typeof part === "string"
-            ? part
-            : typeof part?.text === "string"
-            ? part.text
-            : part?.text?.toString?.() ?? ""
-        )
-        .filter(Boolean)
-        .join("\n\n")
-    );
-  }
-  // Fallback
-
-  return raw?.toString?.() ?? "";
-}
-
-function parseRoadmapMarkdown(markdown: string): Roadmap[] {
-  if (!markdown) return [];
-  // Split by H2 sections (e.g., ## Phase 1 ...). Keep the delimiter by using match and slicing.
-  const lines = markdown.split(/\r?\n/);
-  const sections: string[] = [];
-  let current: string[] = [];
-
-  for (const line of lines) {
-    if (/^##\s+/i.test(line)) {
-      if (current.length) sections.push(current.join("\n"));
-      current = [line];
-    } else {
-      current.push(line);
-    }
-  }
-  if (current.length) sections.push(current.join("\n"));
-
-  const phases: Roadmap[] = sections
-    // filter out possible intro before first phase if it didn't start with ##
-    .filter((sec) => /^##\s+/i.test(sec.trim()))
-    .map((sec) => {
-      // Title from the H2 line
-      const titleMatch = sec.match(/^##\s+\**?(.*?)\**?\s*$/m);
-      const title = titleMatch?.[1]?.trim() || "Phase";
-
-      // Description: line starting with **Description**:
-      const descMatch = sec.match(/\*\*Description\*\*:\s*(.+)/i);
-      const description = descMatch?.[1]?.trim() || "";
-
-      // Milestones: any ordered/bulleted list items within this section
-      const milestoneMatches = Array.from(
-        sec.matchAll(/^\s*(?:\d+\.|[-*+])\s+(.+)/gm)
-      );
-      const milestones = milestoneMatches.map((m) => m[1].trim());
-
-      // Skills: from **Skills**: comma-separated, if present
-      const skillsMatch = sec.match(/\*\*Skills\*\*:\s*(.+)/i);
-      const skills = skillsMatch
-        ? skillsMatch[1].split(/,\s*/).map((s) => s.trim())
-        : [];
-
-      // Resources: extract URLs in this section
-      const resourceMatches = Array.from(sec.matchAll(/https?:\/\/\S+/g));
-      const resources = resourceMatches.map((m) => m[0]);
-
-      return { title, description, milestones, skills, resources } as Roadmap;
-    });
-
-  return phases;
-}
+import { Wand2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function RoadmapPage() {
   const [goal, setGoal] = useState("");
-  const [level, setLevel] = useState("");
-  const [phases, setPhases] = useState<Roadmap[]>([]);
+  const [level, setLevel] = useState("Beginner");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [roadmap, setRoadmap] = useState<string>("");
+
+  const levels = ["Beginner", "Intermediate", "Advanced"] as const;
 
   const generate = async () => {
     if (!goal.trim() || !level.trim()) {
@@ -100,7 +31,6 @@ export default function RoadmapPage() {
 
     setLoading(true);
     setError("");
-    setPhases([]);
 
     try {
       const response = await axios.post("/api/roadmap", { goal, level });
@@ -109,20 +39,8 @@ export default function RoadmapPage() {
         return;
       }
 
-      const content = normalizeCohereContent(response.data.roadmap);
-      if (!content) {
-        setError("No roadmap content returned by AI.");
-        return;
-      }
-
-      const parsed = parseRoadmapMarkdown(content);
-      if (!parsed.length) {
-        setError("Could not parse roadmap into phases.");
-        return;
-      }
-      setLoading(false);
-
-      setPhases(parsed);
+      const content = response.data.roadmap as string;
+      setRoadmap(content ?? "");
     } catch (e) {
       console.log("ERROR generating roadmap:", e);
       setError("Failed to generate roadmap. Please try again.");
@@ -131,108 +49,202 @@ export default function RoadmapPage() {
     }
   };
 
+  const markdownComponents = useMemo(
+    () => ({
+      h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+        <h1
+          {...props}
+          className="text-3xl md:text-4xl font-bold tracking-tight mt-6 mb-4 first:mt-0"
+        />
+      ),
+      h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+        <h2
+          {...props}
+          className="text-2xl md:text-3xl font-semibold tracking-tight mt-8 mb-3"
+        />
+      ),
+      h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+        <h3
+          {...props}
+          className="text-xl md:text-2xl font-semibold mt-6 mb-2"
+        />
+      ),
+      h4: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
+        <h4 {...props} className="text-lg md:text-xl font-semibold mt-4 mb-2" />
+      ),
+      p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
+        <p
+          {...props}
+          className="leading-7 text-base md:text-[17px] text-muted-foreground my-3"
+        />
+      ),
+      ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
+        <ul {...props} className="list-disc pl-6 space-y-2 my-3" />
+      ),
+      ol: (props: React.HTMLAttributes<HTMLOListElement>) => (
+        <ol {...props} className="list-decimal pl-6 space-y-2 my-3" />
+      ),
+      li: (props: React.HTMLAttributes<HTMLLIElement>) => (
+        <li
+          {...props}
+          className="text-base md:text-[17px] text-foreground/90"
+        />
+      ),
+      a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+        <a
+          {...props}
+          className="text-primary underline underline-offset-4 hover:text-primary/90 break-words"
+          target="_blank"
+          rel="noopener noreferrer"
+        />
+      ),
+      strong: (props: React.HTMLAttributes<HTMLElement>) => (
+        <strong {...props} className="font-semibold text-foreground" />
+      ),
+      em: (props: React.HTMLAttributes<HTMLElement>) => (
+        <em {...props} className="italic" />
+      ),
+      code: (props: React.HTMLAttributes<HTMLElement>) => (
+        <code {...props} className="rounded bg-muted px-1.5 py-0.5 text-sm" />
+      ),
+      pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
+        <pre
+          {...props}
+          className="bg-muted rounded-lg p-4 overflow-x-auto my-4"
+        />
+      ),
+      blockquote: (props: React.HTMLAttributes<HTMLElement>) => (
+        <blockquote
+          {...props}
+          className="border-l-4 pl-4 italic text-muted-foreground my-4"
+        />
+      ),
+      hr: () => <hr className="my-6 border-border" />,
+      table: (props: React.HTMLAttributes<HTMLTableElement>) => (
+        <div className="w-full overflow-x-auto">
+          <table {...props} className="w-full text-left border-collapse" />
+        </div>
+      ),
+      th: (props: React.HTMLAttributes<HTMLTableCellElement>) => (
+        <th {...props} className="border-b px-3 py-2 font-semibold" />
+      ),
+      td: (props: React.HTMLAttributes<HTMLTableCellElement>) => (
+        <td {...props} className="border-b px-3 py-2 align-top" />
+      ),
+    }),
+    []
+  );
+
   return (
-    <main className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold flex flex-col">Roadmap Generator</h1>
-
-      <div className="space-y-4">
-        <Input
-          placeholder="Career Goal (e.g., Frontend Developer)"
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-        />
-        <Input
-          placeholder="Your Level (e.g., Beginner)"
-          value={level}
-          onChange={(e) => setLevel(e.target.value)}
-        />
-
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <Button onClick={generate} className="w-full" disabled={loading}>
-          {loading ? "Generating..." : "Generate Roadmap"}
-        </Button>
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+          Roadmap Generator
+        </h1>
+        <p className="text-muted-foreground text-base md:text-lg">
+          Generate a personalized learning plan with phases, projects, and
+          resources.
+        </p>
       </div>
 
-      {/* Stylized, responsive Accordion UI */}
-      {!!phases.length && (
-        <Accordion type="single" collapsible className="w-full">
-          {phases.map((phase, idx) => (
-            <AccordionItem key={idx} value={`phase-${idx}`}>
-              <AccordionTrigger>
-                <div className="flex flex-col text-left">
-                  <span className="text-lg md:text-xl font-semibold">
-                    {phase.title}
-                  </span>
-                  {phase.description && (
-                    <span className="text-muted-foreground text-base md:text-lg line-clamp-2">
-                      {phase.description}
-                    </span>
-                  )}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="text-base font-semibold p-4 rounded-lg border bg-card space-y-4">
-                  {phase.description && (
-                    <div>
-                      <h3 className="font-medium mb-2 text-lg">Description</h3>
-                      <p className="text-base text-muted-foreground">
-                        {phase.description}
-                      </p>
-                    </div>
-                  )}
+      <Card className="border bg-card/60 backdrop-blur">
+        <CardHeader>
+          <CardTitle>Tell us about your goal</CardTitle>
+          <CardDescription>
+            Describe your target role and current level. We will craft a
+            tailored roadmap.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="md:col-span-7">
+              <label htmlFor="goal" className="block text-sm font-medium mb-1">
+                Career goal
+              </label>
+              <Input
+                id="goal"
+                placeholder="e.g., Frontend Developer, Data Analyst"
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+            <div className="md:col-span-3">
+              <label htmlFor="level" className="block text-sm font-medium mb-1">
+                Level
+              </label>
+              <select
+                id="level"
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+                disabled={loading}
+                className="w-full h-10 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+              >
+                {levels.map((lv) => (
+                  <option key={lv} value={lv}>
+                    {lv}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 flex items-end">
+              <Button
+                onClick={generate}
+                className="w-full gap-2"
+                disabled={loading}
+              >
+                <Wand2 className="size-4" />
+                {loading ? "Generating..." : "Generate"}
+              </Button>
+            </div>
+          </div>
 
-                  {!!phase.milestones?.length && (
-                    <div>
-                      <h3 className="font-medium mb-2 text-lg">Milestones</h3>
-                      <ul className="list-disc pl-6 text-base space-y-3">
-                        {phase.milestones.map((m, i) => (
-                          <li key={i}>{m}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+          {error && (
+            <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-3 py-2 text-sm">
+              {error}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                  {!!phase.skills?.length && (
-                    <div>
-                      <h3 className="font-medium mb-2">Skills</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {phase.skills.map((s, i) => (
-                          <span
-                            key={i}
-                            className="bg-secondary text-foreground/80 px-2 py-1 rounded-md text-xs"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+      {loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Generating roadmap…</CardTitle>
+            <CardDescription>This usually takes a few seconds.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-4">
+              <div className="h-5 w-1/2 rounded bg-muted" />
+              <div className="h-4 w-3/4 rounded bg-muted" />
+              <div className="h-4 w-2/3 rounded bg-muted" />
+              <div className="h-5 w-1/3 rounded bg-muted" />
+              <div className="h-4 w-4/5 rounded bg-muted" />
+              <div className="h-4 w-3/5 rounded bg-muted" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-                  {!!phase.resources?.length && (
-                    <div>
-                      <h3 className="font-medium mb-2">Resources</h3>
-                      <ul className="list-square pl-6 text-sm space-y-1">
-                        {phase.resources.map((r, i) => (
-                          <li key={i}>
-                            <a
-                              href={r}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline break-all"
-                            >
-                              {r}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+      {!!roadmap && !loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Generated Roadmap</CardTitle>
+            <CardDescription>
+              Formatted for readability. You can copy and follow each phase.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-foreground">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
+              >
+                {roadmap}
+              </ReactMarkdown>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </main>
   );

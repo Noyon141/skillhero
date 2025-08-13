@@ -1,8 +1,9 @@
-import { CohereClientV2 } from "cohere-ai";
 import { NextRequest, NextResponse } from "next/server";
 
-const cohere = new CohereClientV2({
-  token: process.env.COHERE_AI_API_KEY! || "",
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY!,
 });
 
 if (!process.env.COHERE_AI_API_KEY) {
@@ -50,24 +51,39 @@ export async function POST(req: NextRequest) {
 Each phase should be detailed and actionable with proper Title, Description, key with a focus on practical skills and real-world applications.`;
 
   try {
-    const response = await cohere.chat({
-      model: "command-a-03-2025",
-      messages: [
-        {
-          role: "user",
-          content: prompt,  
+    // const response = await cohere.chat({
+    //   model: "command-a-03-2025",
+    //   messages: [
+    //     {
+    //       role: "user",
+    //       content: prompt,
+    //     },
+    //   ],
+    //   maxTokens: 800,
+    //   temperature: 0.7,
+    // });
+
+    // const roadmap = response.message.content;
+
+    // console.log("Got the Response From Cohere ");
+    // return NextResponse.json({ roadmap, success: true }, { status: 200 });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 0, // Disables thinking
         },
-      ],
-      maxTokens: 800,
-      temperature: 0.7,
+      },
     });
 
- 
-
-    const roadmap = response.message.content;
-    
-    console.log("Got the Response From Cohere ");
-    return NextResponse.json({ roadmap, success: true }, { status: 200 });
+    if (response) {
+      console.log("Got the Response From Gemini AI");
+      return NextResponse.json(
+        { roadmap: response.text, success: true },
+        { status: 200 }
+      );
+    }
   } catch (error) {
     console.log("Error generating roadmap:", error);
 
