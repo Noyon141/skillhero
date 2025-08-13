@@ -1,4 +1,10 @@
 "use client";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -136,6 +142,38 @@ export default function RoadmapPage() {
     []
   );
 
+  const sections = useMemo(() => {
+    if (!roadmap) return [] as { title: string; content: string }[];
+    const lines = roadmap.split(/\r?\n/);
+    const result: { title: string; content: string }[] = [];
+    let currentTitle = "";
+    let currentBody: string[] = [];
+
+    for (const line of lines) {
+      const heading = line.match(/^#{2,3}\s+(.*)$/);
+      if (heading) {
+        if (currentTitle) {
+          result.push({
+            title: currentTitle,
+            content: currentBody.join("\n").trim(),
+          });
+        }
+        currentTitle = heading[1].trim();
+        currentBody = [];
+      } else {
+        currentBody.push(line);
+      }
+    }
+    if (currentTitle) {
+      result.push({
+        title: currentTitle,
+        content: currentBody.join("\n").trim(),
+      });
+    }
+
+    return result.filter((s) => s.title);
+  }, [roadmap]);
+
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8">
       <div className="space-y-2">
@@ -236,14 +274,40 @@ export default function RoadmapPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-foreground">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={markdownComponents}
-              >
-                {roadmap}
-              </ReactMarkdown>
-            </div>
+            {sections.length > 0 ? (
+              <Accordion type="single" collapsible className="w-full">
+                {sections.map((sec, idx) => (
+                  <AccordionItem key={idx} value={`phase-${idx}`}>
+                    <AccordionTrigger>
+                      <div className="flex flex-col text-left">
+                        <span className="text-lg md:text-xl font-semibold">
+                          {sec.title}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="text-foreground">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={markdownComponents}
+                        >
+                          {sec.content}
+                        </ReactMarkdown>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            ) : (
+              <div className="text-foreground">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={markdownComponents}
+                >
+                  {roadmap}
+                </ReactMarkdown>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
