@@ -1,3 +1,4 @@
+import { SmoothScroll } from "@/components/SmoothScroll";
 import { ThemeProvider } from "@/components/Theme-Provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
@@ -28,14 +29,16 @@ export default function RootLayout({
           className={`${urbanist.className} antialiased`}
           suppressHydrationWarning
         >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <main className="w-full min-h-screen p-4">{children}</main>
-          </ThemeProvider>
+          <SmoothScroll>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <main className="w-full min-h-screen p-4">{children}</main>
+            </ThemeProvider>
+          </SmoothScroll>
         </body>
       </html>
     </ClerkProvider>
