@@ -10,6 +10,16 @@ if (!process.env.COHERE_AI_API_KEY) {
   throw new Error("COHERE_AI_API_KEY is not set in environment variables!");
 }
 
+// Simple in-memory cache with TTL to reduce repeated AI calls for the same inputs
+type CacheEntry = { content: string; expiresAt: number };
+const roadmapCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
+
+function makeCacheKey(goal: string, level: string) {
+  const clean = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+  return `${clean(goal)}::${clean(level)}`;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { goal, level } = await body;
@@ -40,6 +50,14 @@ export async function POST(req: NextRequest) {
   //     roadmap: res,
   //   })
   // );
+
+  // Try cache first
+  const cacheKey = makeCacheKey(goal, level);
+  const now = Date.now();
+  const cached = roadmapCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return NextResponse.json({ roadmap: cached.content, success: true });
+  }
 
   const prompt = `Generate a detailed roadmap for a ${goal} at the ${level} level. The roadmap should include the following phases:
 1. **Foundational Knowledge**: Key concepts and skills to master.
@@ -79,8 +97,11 @@ Each phase should be detailed and actionable with proper Title, Description, key
 
     if (response) {
       console.log("Got the Response From Gemini AI");
+      const content = response.text ?? "";
+      // Save to in-memory cache
+      roadmapCache.set(cacheKey, { content, expiresAt: now + CACHE_TTL_MS });
       return NextResponse.json(
-        { roadmap: response.text, success: true },
+        { roadmap: content, success: true },
         { status: 200 }
       );
     }

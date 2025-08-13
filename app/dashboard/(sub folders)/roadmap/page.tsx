@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LoaderTwo } from "@/components/ui/loader";
 import axios from "axios";
 import { Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -194,7 +195,7 @@ export default function RoadmapPage() {
                 disabled={loading}
               >
                 <Wand2 className="size-4" />
-                {loading ? "Generating..." : "Generate"}
+                {loading ? <LoaderTwo /> : "Generate"}
               </Button>
             </div>
           </div>
